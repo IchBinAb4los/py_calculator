@@ -1,6 +1,7 @@
 import time
 import random
 import threading
+import math
 from tkinter import *
 from tkinter.font import *
 from functools import partial
@@ -20,6 +21,12 @@ buttonPos = {
 
 special = ["%", "CE", "C", u"\u2190", "1/x", "x"+u"\u00b2", "√x", u"\u00b1", "="]
 
+keys = {
+    "minus":"-", "escape":"CE", "c":"C", "backspace":u"\u2190",
+    "slash":u"\u00f7", "asterisk":"x", "minus":"-", "plus":"+",
+    "return":"=", "period":".", "comma":"."
+}
+
 def isInt(_):
     try:
         int(_)
@@ -30,6 +37,7 @@ def isInt(_):
 class Calculator:
     def __init__(self):
         self.root = Tk()
+        self.root.bind("<Key>", self.pressKey)
         self.root.title("Calculadora")
         self.root.geometry("300x400")
         self.root.resizable(False, False)
@@ -40,13 +48,22 @@ class Calculator:
         self.buttons = self.fButtons_buttons_create(self.fButtons)
         self.fButtons.rowconfigure(0, weight=1)
         self.colorLoop()
-        self.firstClick = True
-
+        self.lastOp = ""
         self.actualResult = 0
 
         for i in range(1, 5):
             self.fButtons.rowconfigure(i, weight=1)
             self.fButtons.columnconfigure(i, weight=1)
+
+    def pressKey(self, event):
+        key = event.keysym.lower()
+        if isInt(key):
+            self.do(key)
+        else:
+            for k,v in keys.items():
+                if k == key:
+                    self.do(v)
+                    break
 
     def do(self, _str):
         isSpecial = False
@@ -67,15 +84,47 @@ class Calculator:
                 op = _str
                 actual_actual_text = self.fDisplay_actual_label.cget("text")
                 if isInt(actual_actual_text[len(actual_actual_text)-1]):
-                    actual_actual_text = self.fDisplay_actual_label.cget("text")
-                    self.fDisplay_actual_label.config(text=actual_actual_text + op)
+                    if op == ".":
+                        if not self.lastOp == "":
+                            terms = self.fDisplay_actual_label.cget("text").split(self.lastOp)
+                            if not op in terms[len(terms)-1]:
+                                actual_actual_text = self.fDisplay_actual_label.cget("text")
+                                self.fDisplay_actual_label.config(text=actual_actual_text + op)
+                        else:
+                            actual_actual_text = self.fDisplay_actual_label.cget("text")
+                            self.fDisplay_actual_label.config(text=actual_actual_text + op)
+                    else:
+                        actual_actual_text = self.fDisplay_actual_label.cget("text")
+                        self.fDisplay_actual_label.config(text=actual_actual_text + op)
+                        self.lastOp = op
         else:
-            if _str == "=":
+            if _str == "C":
+                self.fDisplay_actual_label.config(text="0")
+            elif _str == "CE":
+                self.fDisplay_actual_label.config(text="0")
+                self.fDisplay_total_label.config(text="")
+            elif _str == u"\u2190":
                 actual_actual_text = self.fDisplay_actual_label.cget("text")
-                actual_actual_text = actual_actual_text.replace(u"\u00f7", "/")
-                actual_actual_text = actual_actual_text.replace("x", "*")
-                self.fDisplay_total_label.config(text=str(eval(actual_actual_text)))
-                self.fDisplay_actual_label.config(text=str(eval(actual_actual_text)))
+                if not actual_actual_text == "0":
+                    self.fDisplay_actual_label.config(text=actual_actual_text[0:len(actual_actual_text)-1])
+                    actual_actual_text = self.fDisplay_actual_label.cget("text")
+                    if actual_actual_text == "":
+                        self.fDisplay_actual_label.config(text="0")
+            elif _str == "=":
+                actual_actual_text = self.fDisplay_actual_label.cget("text")
+                if isInt(actual_actual_text[len(actual_actual_text)-1]):
+                    self.fDisplay_total_label.config(text=actual_actual_text)
+                    actual_actual_text = actual_actual_text.replace(u"\u00f7", "/")
+                    actual_actual_text = actual_actual_text.replace("x", "*")
+                    _eval = eval(actual_actual_text)
+                    _eval_str = str(_eval)
+                    if "." in _eval_str:
+                        _eval = round(_eval, 3)
+                    _eval_str = str(_eval)
+                    _eval_str_split = _eval_str.split(".")
+                    if int(_eval_str_split[1]) == 0:
+                        _eval = math.trunc(_eval)
+                    self.fDisplay_actual_label.config(text=str(_eval))
 
     def changeColor(self, i, colors):
         try:
