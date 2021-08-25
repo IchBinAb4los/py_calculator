@@ -18,6 +18,8 @@ buttonPos = {
     u"\u00b1":[6, 1], 0:[6, 2], ".":[6, 3], "=":[6, 4]
 }
 
+special = ["%", "CE", "C", u"\u2190", "1/x", "x"+u"\u00b2", "√x", u"\u00b1", "="]
+
 def isInt(_):
     try:
         int(_)
@@ -47,23 +49,33 @@ class Calculator:
             self.fButtons.columnconfigure(i, weight=1)
 
     def do(self, _str):
-        if isInt(_str):
-            if self.firstClick:
-                self.firstClick = False
-            n = int(_str)
-            if not self.fDisplay_actual_label.cget("text") == "0":
-                self.fDisplay_actual_label.config(text=self.fDisplay_actual_label.cget("text")+str(n))
+        isSpecial = False
+
+        for i in special:
+            if _str == i:
+                isSpecial = True
+                break
+
+        if not isSpecial:
+            if isInt(_str):
+                n = _str
+                if self.fDisplay_actual_label.cget("text") == "0":
+                    self.fDisplay_actual_label.config(text="")
+                actual_actual_text = self.fDisplay_actual_label.cget("text")
+                self.fDisplay_actual_label.config(text=actual_actual_text+n)
             else:
-                self.fDisplay_actual_label.config(text=str(n))
-        else:
-            if not self.firstClick:
-                self.firstClick = True
                 op = _str
-                if op == "+":
-                    n = int(self.fDisplay_actual_label.cget("text"))
-                    self.actualResult += n
-                    self.fDisplay_total_label.config(text=self.actualResult)
-                    self.fDisplay_actual_label.config(text="0")
+                actual_actual_text = self.fDisplay_actual_label.cget("text")
+                if isInt(actual_actual_text[len(actual_actual_text)-1]):
+                    actual_actual_text = self.fDisplay_actual_label.cget("text")
+                    self.fDisplay_actual_label.config(text=actual_actual_text + op)
+        else:
+            if _str == "=":
+                actual_actual_text = self.fDisplay_actual_label.cget("text")
+                actual_actual_text = actual_actual_text.replace(u"\u00f7", "/")
+                actual_actual_text = actual_actual_text.replace("x", "*")
+                self.fDisplay_total_label.config(text=str(eval(actual_actual_text)))
+                self.fDisplay_actual_label.config(text=str(eval(actual_actual_text)))
 
     def changeColor(self, i, colors):
         try:
