@@ -122,7 +122,7 @@ class Calculator:
                         _eval = round(_eval, 3)
                     _eval_str = str(_eval)
                     _eval_str_split = _eval_str.split(".")
-                    if int(_eval_str_split[1]) == 0:
+                    if int(_eval_str_split[len(_eval_str_split)-1]) == 0:
                         _eval = math.trunc(_eval)
                     self.fDisplay_actual_label.config(text=str(_eval))
 
