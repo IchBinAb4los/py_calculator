@@ -9,6 +9,7 @@ from functools import partial
 SMALL_DEFAULT = ("Helvetica", "15")
 DEFAULT_BOLD = ("Helvetica", "20", "bold")
 BUTTON_BOLD = ("Helvetica", "17", "bold")
+PREV_BOLD = ("Helvetica", "13", "bold")
 
 buttonPos = {
     "%":[1, 1], "CE":[1, 2], "C":[1, 3], u"\u2190":[1, 4],
@@ -16,10 +17,10 @@ buttonPos = {
     7:[3, 1], 8:[3, 2], 9:[3, 3], "x":[3, 4],
     4:[4, 1], 5:[4, 2], 6:[4, 3], "-":[4, 4],
     1:[5, 1], 2:[5, 2], 3:[5, 3], "+":[5, 4],
-    u"\u00b1":[6, 1], 0:[6, 2], ".":[6, 3], "=":[6, 4]
+    "Prev":[6, 1], 0:[6, 2], ".":[6, 3], "=":[6, 4]
 }
 
-special = ["%", "CE", "C", u"\u2190", "1/x", "x"+u"\u00b2", "√x", u"\u00b1", "="]
+special = ["%", "CE", "C", u"\u2190", "1/x", "x"+u"\u00b2", "√x", "Prev", "="]
 
 keys = {
     "minus":"-", "escape":"CE", "c":"C", "backspace":u"\u2190",
@@ -33,6 +34,13 @@ def isInt(_):
         return True
     except ValueError:
         return False
+
+def roundAndTrunc(n):
+    n = round(n, 3)
+    _eval_str_split = str(n).split(".")
+    if int(_eval_str_split[len(_eval_str_split) - 1]) == 0:
+        n = math.trunc(n)
+    return n
 
 class Calculator:
     def __init__(self):
@@ -49,7 +57,6 @@ class Calculator:
         self.fButtons.rowconfigure(0, weight=1)
         self.colorLoop()
         self.lastOp = ""
-        self.actualResult = 0
 
         for i in range(1, 5):
             self.fButtons.rowconfigure(i, weight=1)
@@ -91,9 +98,15 @@ class Calculator:
                                 actual_actual_text = self.fDisplay_actual_label.cget("text")
                                 self.fDisplay_actual_label.config(text=actual_actual_text + op)
                         else:
-                            actual_actual_text = self.fDisplay_actual_label.cget("text")
-                            self.fDisplay_actual_label.config(text=actual_actual_text + op)
+                            if not "." in actual_actual_text:
+                                actual_actual_text = self.fDisplay_actual_label.cget("text")
+                                self.fDisplay_actual_label.config(text=actual_actual_text + op)
                     else:
+                        actual_actual_text = self.fDisplay_actual_label.cget("text")
+                        self.fDisplay_actual_label.config(text=actual_actual_text + op)
+                        self.lastOp = op
+                else:
+                    if op == "-" and not self.lastOp == op:
                         actual_actual_text = self.fDisplay_actual_label.cget("text")
                         self.fDisplay_actual_label.config(text=actual_actual_text + op)
                         self.lastOp = op
@@ -110,21 +123,61 @@ class Calculator:
                     actual_actual_text = self.fDisplay_actual_label.cget("text")
                     if actual_actual_text == "":
                         self.fDisplay_actual_label.config(text="0")
+            elif _str == "Prev":
+                if not self.fDisplay_total_label.cget("text") == "":
+                    self.fDisplay_actual_label.config(text=self.fDisplay_total_label.cget("text"))
+            elif _str == "%":
+                actual_actual_text = self.fDisplay_actual_label.cget("text")
+                if isInt(actual_actual_text[len(actual_actual_text) - 1]):
+                    _eval = self._evaluate(actual_actual_text)
+                    self.fDisplay_actual_label.config(text=str(_eval/100)+"x")
+            elif _str == "1/x":
+                try:
+                    actual_actual_text = self.fDisplay_actual_label.cget("text")
+                    if isInt(actual_actual_text[len(actual_actual_text) - 1]):
+                        _eval = 1/self._evaluate(actual_actual_text)
+                        _eval = roundAndTrunc(_eval)
+                        self.fDisplay_actual_label.config(text=str(_eval))
+                except ZeroDivisionError:
+                    pass
+            elif _str == "x"+u"\u00b2":
+                try:
+                    actual_actual_text = self.fDisplay_actual_label.cget("text")
+                    if isInt(actual_actual_text[len(actual_actual_text) - 1]):
+                        _eval = self._evaluate(actual_actual_text)**2
+                        _eval = roundAndTrunc(_eval)
+                        self.fDisplay_actual_label.config(text=str(_eval))
+                except ValueError:
+                    pass
+            elif _str == "√x":
+                try:
+                    actual_actual_text = self.fDisplay_actual_label.cget("text")
+                    if isInt(actual_actual_text[len(actual_actual_text) - 1]):
+                        _eval = math.sqrt(self._evaluate(actual_actual_text))
+                        _eval = roundAndTrunc(_eval)
+                        self.fDisplay_actual_label.config(text=str(_eval))
+                except ValueError:
+                    pass
             elif _str == "=":
                 actual_actual_text = self.fDisplay_actual_label.cget("text")
-                if isInt(actual_actual_text[len(actual_actual_text)-1]):
-                    self.fDisplay_total_label.config(text=actual_actual_text)
-                    actual_actual_text = actual_actual_text.replace(u"\u00f7", "/")
-                    actual_actual_text = actual_actual_text.replace("x", "*")
-                    _eval = eval(actual_actual_text)
-                    _eval_str = str(_eval)
-                    if "." in _eval_str:
-                        _eval = round(_eval, 3)
-                    _eval_str = str(_eval)
-                    _eval_str_split = _eval_str.split(".")
-                    if int(_eval_str_split[len(_eval_str_split)-1]) == 0:
-                        _eval = math.trunc(_eval)
-                    self.fDisplay_actual_label.config(text=str(_eval))
+                if isInt(actual_actual_text[len(actual_actual_text) - 1]):
+                    self.fDisplay_actual_label.config(text=str(self._evaluate(actual_actual_text)))
+
+    def _evaluate(self, actual_actual_text):
+        actual_actual_text = self.fDisplay_actual_label.cget("text")
+        if isInt(actual_actual_text[len(actual_actual_text) - 1]):
+            self.fDisplay_total_label.config(text=actual_actual_text)
+            actual_actual_text = actual_actual_text.replace(u"\u00f7", "/")
+            actual_actual_text = actual_actual_text.replace("x", "*")
+            _eval = eval(actual_actual_text)
+            _eval_str = str(_eval)
+            if "." in _eval_str:
+                _eval = round(_eval, 3)
+            _eval_str = str(_eval)
+            _eval_str_split = _eval_str.split(".")
+            if int(_eval_str_split[len(_eval_str_split) - 1]) == 0:
+                _eval = math.trunc(_eval)
+            return _eval
 
     def changeColor(self, i, colors):
         try:
@@ -142,7 +195,10 @@ class Calculator:
     def fButtons_buttons_create(self, frame):
         bs = []
         for k,v in buttonPos.items():
-            b = Button(frame, command=partial(self.do, str(k)), text=str(k), font=BUTTON_BOLD, borderwidth=4)
+            _font = BUTTON_BOLD
+            if str(k) == "Prev":
+                _font = PREV_BOLD
+            b = Button(frame, command=partial(self.do, str(k)), text=str(k), font=_font, borderwidth=4)
             b.grid(row=v[0], column=v[1], sticky=NSEW)
             bs.append(b)
         return bs
