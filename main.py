@@ -49,7 +49,7 @@ class Calculator:
         self.root.title("Calculadora")
         self.root.geometry("300x400")
         self.root.resizable(False, False)
-        self.root.iconbitmap("./img/icon.ico")
+        #self.root.iconbitmap("./img/icon.ico")
         self.fDisplay = self.fDisplay_create()
         self.fButtons = self.fButtons_create()
         self.fDisplay_total_label, self.fDisplay_actual_label = self.fDisplay_labels_create(self.fDisplay)
