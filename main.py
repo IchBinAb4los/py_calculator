@@ -188,7 +188,7 @@ class Calculator:
             pass
 
     def colorLoop(self):
-        colors = ["#ffffff", "#e3e3e3", "#d9d8d9"]
+        colors = ["#ffffff", "#f5f5f5", "#f9f9f9"]
         for i in self.buttons:
             threading.Thread(target=self.changeColor, args=(i, colors)).start()
 
