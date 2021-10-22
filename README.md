@@ -1,2 +1,2 @@
 # Calculator
-![Calculator](https://ibb.co/jMF2zG1)
+![Calculator](https://i.ibb.co/ncSvBf5/1.png)
